@@ -1,4 +1,4 @@
-# ROOM ISP - agente seguro v4.1 para RouterOS 6.49+
+# ROOM ISP - agente seguro v4.2 para RouterOS 6.49+
 # Generado desde el portal ISP. No copie configuracion.rsc ni credenciales antiguas.
 # Instala SOLO scripts/schedulers ROOM_ISP_* y una regla de corte para la lista ROOM_ISP_SUSPENDED.
 
@@ -6,7 +6,11 @@
     :local roomEnrollUrl "__ROOM_ENROLL_URL__";
     :local roomAgentUrl "__ROOM_AGENT_URL__";
     :local roomEnrollCode "__ROOM_ENROLL_CODE__";
-    :if (([:find $roomEnrollUrl "__ROOM_"] != nil) || ([:find $roomAgentUrl "__ROOM_"] != nil) || ([:find $roomEnrollCode "__ROOM_"] != nil)) do={ :error "ROOM ISP: instalador no generado"; };
+    # Preflight del archivo personalizado.
+    :if ([:len $roomEnrollCode] < 40) do={ :error "ROOM ISP: codigo de enrolamiento invalido o no personalizado"; };
+    :if ([:pick $roomEnrollUrl 0 8] != "https://") do={ :error "ROOM ISP: URL de enrolamiento invalida"; };
+    :if ([:pick $roomAgentUrl 0 8] != "https://") do={ :error "ROOM ISP: URL de agente invalida"; };
+    :log info ("ROOM ISP v4.2: preflight OK, iniciando enrolamiento");
 
     :local roomIdentity [/system identity get name];
     :local roomVersion [/system resource get version];
@@ -20,27 +24,32 @@
     :local roomBody ("{\"protocol\":4,\"enrollment_code\":\"" . $roomEnrollCode . "\",\"device\":{\"identity\":\"" . $roomIdentity . "\",\"routeros_version\":\"" . $roomVersion . "\",\"architecture\":\"" . $roomArchitecture . "\",\"model\":\"" . $roomModel . "\",\"software_id\":\"" . $roomSoftwareId . "\"},\"capabilities\":{\"pppoe\":" . $roomPppoe . ",\"dhcp\":" . $roomDhcp . ",\"hotspot\":" . $roomHotspot . ",\"simple_queues\":" . $roomQueues . "}}");
 
     :local roomEnrollment;
+    :log info "ROOM ISP v4.2: contactando backend";
     :do { :set roomEnrollment [/tool fetch url=$roomEnrollUrl http-method=post http-header-field="Content-Type:application/json" http-data=$roomBody output=user as-value check-certificate=yes-without-crl]; } on-error={ :error "ROOM ISP enrollment failed"; };
     :local roomResponse ($roomEnrollment->"data");
-    :if ([:pick $roomResponse 0 3] != "OK|") do={ :error "ROOM ISP enrollment rejected"; };
+    :if ([:pick $roomResponse 0 3] != "OK|") do={ :log warning ("ROOM ISP v4.2: enrolamiento rechazado: " . $roomResponse); :error "ROOM ISP enrollment rejected"; };
+    :log info "ROOM ISP v4.2: enrolamiento aceptado";
     :local roomRest [:pick $roomResponse 3 [:len $roomResponse]]; :local roomP1 [:find $roomRest "|"]; :local roomRouterId [:pick $roomRest 0 $roomP1];
     :set roomRest [:pick $roomRest ($roomP1 + 1) [:len $roomRest]]; :local roomP2 [:find $roomRest "|"]; :local roomAgentToken [:pick $roomRest 0 $roomP2];
     :local roomPollMinutes [:tonum [:pick $roomRest ($roomP2 + 1) [:len $roomRest]]]; :if (($roomPollMinutes < 5) || ($roomPollMinutes > 60)) do={ :set roomPollMinutes 5; };
     :if (([:len $roomRouterId] < 20) || ([:len $roomAgentToken] < 32)) do={ :error "ROOM ISP: respuesta incompleta"; };
 
+    # Limpieza idempotente: SOLO después de que el backend aceptó el enrolamiento.
+    # Si había una instalación vieja o incompleta, deja exactamente una instalación ROOM ISP.
+    :log info "ROOM ISP v4.2: limpiando instalacion ROOM ISP anterior";
     :foreach roomItem in=[/system scheduler find where name~"^ROOM_ISP_"] do={ /system scheduler disable $roomItem; };
-    :foreach roomItem in=[/system script find where name~"^ROOM_ISP_"] do={ /system script remove $roomItem; };
     :foreach roomItem in=[/system scheduler find where name~"^ROOM_ISP_"] do={ /system scheduler remove $roomItem; };
+    :foreach roomItem in=[/system script find where name~"^ROOM_ISP_"] do={ /system script remove $roomItem; };
 
-    # Regla de corte para IP fija/DHCP. Solo afecta direcciones que ROOM agregue a su propia address-list.
-    :if ([:len [/ip firewall filter find where comment="ROOM ISP - suspension"]] = 0) do={
-        /ip firewall filter add chain=forward src-address-list=ROOM_ISP_SUSPENDED action=drop place-before=0 comment="ROOM ISP - suspension";
-    };
+    # Elimina solo la regla firewall propiedad de ROOM ISP y la crea una sola vez.
+    # NO elimina usuarios PPPoE, perfiles, colas ni leases existentes.
+    :foreach roomRule in=[/ip firewall filter find where comment="ROOM ISP - suspension"] do={ /ip firewall filter remove $roomRule; };
+    /ip firewall filter add chain=forward src-address-list=ROOM_ISP_SUSPENDED action=drop place-before=0 comment="ROOM ISP - suspension";
 
     :local roomStateSource (":global roomIspRouterId \"" . $roomRouterId . "\";\r\n:global roomIspAgentToken \"" . $roomAgentToken . "\";\r\n:global roomIspAgentUrl \"" . $roomAgentUrl . "\";\r\n:global roomIspProtocol 4;");
-    /system script add name=ROOM_ISP_STATE comment="ROOM ISP v4.1 - credencial privada" policy=read source=$roomStateSource;
+    /system script add name=ROOM_ISP_STATE comment="ROOM ISP v4.2 - credencial privada" policy=read source=$roomStateSource;
 
-    /system script add name=ROOM_ISP_AGENT comment="ROOM ISP v4.1 - control de acceso y cobros" policy=read,write,test source={
+    /system script add name=ROOM_ISP_AGENT comment="ROOM ISP v4.2 - control de acceso y cobros" policy=read,write,test source={
         :do {
             /system script run ROOM_ISP_STATE;
             :global roomIspRouterId; :global roomIspAgentToken; :global roomIspAgentUrl;
@@ -114,7 +123,7 @@
         } on-error={ :log warning "ROOM ISP: backend no disponible; la red sigue operando"; };
     };
 
-    /system script add name=ROOM_ISP_INVENTORY comment="ROOM ISP v4.1 - inventario por lotes sin passwords" policy=read,test source={
+    /system script add name=ROOM_ISP_INVENTORY comment="ROOM ISP v4.2 - inventario por lotes sin passwords" policy=read,test source={
         :do {
             /system script run ROOM_ISP_STATE;
             :global roomIspRouterId;
@@ -231,10 +240,11 @@
 
     # Poll liviano y conciliacion diaria. No se guarda un heartbeat historico por ciclo.
     :local roomPollInterval ($roomPollMinutes . "m");
-    /system scheduler add name=ROOM_ISP_AGENT_SCHED interval=$roomPollInterval start-time=startup on-event="/system script run ROOM_ISP_AGENT" policy=read,write,test comment="ROOM ISP v4.1 - poll";
-    /system scheduler add name=ROOM_ISP_INVENTORY_SCHED interval=1d start-time=00:17:00 on-event="/system script run ROOM_ISP_INVENTORY" policy=read,test comment="ROOM ISP v4.1 - inventario diario";
+    :foreach roomSched in=[/system scheduler find where name="ROOM_ISP_AGENT_SCHED"] do={ /system scheduler remove $roomSched; };
+    :foreach roomSched in=[/system scheduler find where name="ROOM_ISP_INVENTORY_SCHED"] do={ /system scheduler remove $roomSched; };
+    /system scheduler add name=ROOM_ISP_AGENT_SCHED interval=$roomPollInterval start-time=startup on-event="/system script run ROOM_ISP_AGENT" policy=read,write,test comment="ROOM ISP v4.2 - poll";
+    /system scheduler add name=ROOM_ISP_INVENTORY_SCHED interval=1d start-time=00:17:00 on-event="/system script run ROOM_ISP_INVENTORY" policy=read,test comment="ROOM ISP v4.2 - inventario diario";
     /system script run ROOM_ISP_AGENT;
     /system script run ROOM_ISP_INVENTORY;
-    :log info ("ROOM ISP: vinculacion completada; poll=" . $roomPollInterval . ", inventario=1d");
+    :log info ("ROOM ISP v4.2: INSTALACION COMPLETA; poll=" . $roomPollInterval . ", inventario=1d");
 }
-
