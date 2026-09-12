@@ -1,0 +1,9 @@
+# ROOM ISP · Edge Functions
+# Las funciones de usuario conservan verificación JWT de Supabase.
+# El enrolamiento y agente MikroTik usan sus propios tokens de un solo uso / bearer hasheado.
+
+[functions.mikrotik-enroll]
+verify_jwt = false
+
+[functions.mikrotik-agent]
+verify_jwt = false

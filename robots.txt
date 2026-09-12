@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /administrador.html
+Disallow: /isp.html
+Disallow: /cliente.html
