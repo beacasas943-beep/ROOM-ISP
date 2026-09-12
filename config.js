@@ -1,10 +1,11 @@
 /* ROOM ISP · configuración pública del frontend.
+/* ROOM ISP · configuración pública del frontend.
    Complete estos dos valores cuando cree la nueva Supabase.
    NO coloque secret keys, service_role, tokens SmartOLT ni credenciales MikroTik aquí. */
 window.ROOM_ISP_CONFIG = Object.freeze({
   APP_NAME: "ROOM ISP",
-  SUPABASE_URL: "",
-  SUPABASE_PUBLISHABLE_KEY: "",
+  SUPABASE_URL: "https://hempvzeptmxcndxefmwr.supabase.co",
+  SUPABASE_PUBLISHABLE_KEY: "sb_publishable_79oIXQL2eCR_fNVAYq-jnA_9k-lvV70",
   ROOM_API_FUNCTION: "room-api",
   MIKROTIK_INSTALLER_FUNCTION: "mikrotik-installer",
   SMARTOLT_FUNCTION: "smartolt-sync",
