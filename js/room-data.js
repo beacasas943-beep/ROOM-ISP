@@ -1,4 +1,4 @@
-// ROOM ISP v5.0-RC4 · Data layer
+// ROOM ISP v5.0-RC4.2 · Data layer
 (() => {
   "use strict";
   const cfg = window.ROOM_ISP_CONFIG || {};
