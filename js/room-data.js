@@ -136,7 +136,11 @@
   }
 
   async function mikrotikInstaller(organizationId, label) {
-    return invoke(cfg.MIKROTIK_INSTALLER_FUNCTION || "mikrotik-installer", { organization_id: organizationId, label });
+    return invoke(cfg.MIKROTIK_INSTALLER_FUNCTION || "mikrotik-installer", { action: "issue", organization_id: organizationId, label });
+  }
+
+  async function mikrotikInstallerStatus(organizationId, enrollmentId) {
+    return invoke(cfg.MIKROTIK_INSTALLER_FUNCTION || "mikrotik-installer", { action: "status", organization_id: organizationId, enrollment_id: enrollmentId });
   }
 
   async function smartoltSync(organizationId, mode = "full") {
@@ -145,8 +149,9 @@
 
   window.RoomData = Object.freeze({
     init, api, invoke, whoami, signInStaff, requestCustomerOtp, verifyCustomerOtp, signOut, changePassword,
-    table, upload, signedUrl, mikrotikInstaller, smartoltSync, normalizePhone,
+    table, upload, signedUrl, mikrotikInstaller, mikrotikInstallerStatus, smartoltSync, normalizePhone,
     get client(){ return client; }, get session(){ return session; }, get identity(){ return identity; },
     configured, portal, config: cfg
   });
 })();
+
