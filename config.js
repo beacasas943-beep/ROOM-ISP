@@ -8,13 +8,14 @@ window.ROOM_ISP_CONFIG = {
   MIKROTIK_INSTALLER_FUNCTION: "mikrotik-installer",
   SMARTOLT_FUNCTION: "smartolt-sync",
   IDENTITY_LOOKUP_FUNCTION: "identity-lookup",
+  CUSTOMER_AUTH_FUNCTION: "customer-auth",
 
   ENABLE_TEST_AUTH: false,
   TEST_ADMIN_USER: "",
   TEST_ADMIN_PASSWORD: "",
   TEST_ISP_USER: "",
   TEST_ISP_PASSWORD: "",
-  CUSTOMER_AUTH_MODE: "otp",
+  CUSTOMER_AUTH_MODE: "identifier_pin",
 
   TELEGRAM_BOT_USERNAME: "ROOM_ispp_bot",
   APP_NAME: "ROOM ISP",
