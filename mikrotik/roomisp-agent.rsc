@@ -1,4 +1,4 @@
-# ROOM ISP - instalador/agente seguro v5.0-RC2 para RouterOS 6.49+ y RouterOS 7.x
+# ROOM ISP - instalador/agente seguro v5.0-RC3 para RouterOS 6.49+ y RouterOS 7.x
 # Generado desde el portal ISP. No copie configuracion.rsc ni credenciales antiguas.
 # Instala SOLO scripts/schedulers ROOM_ISP_* y una regla de corte para la lista ROOM_ISP_SUSPENDED.
 
@@ -10,7 +10,7 @@
     :if ([:len $roomEnrollCode] < 40) do={ :error "ROOM ISP: codigo de enrolamiento invalido o no personalizado"; };
     :if ([:pick $roomEnrollUrl 0 8] != "https://") do={ :error "ROOM ISP: URL de enrolamiento invalida"; };
     :if ([:pick $roomAgentUrl 0 8] != "https://") do={ :error "ROOM ISP: URL de agente invalida"; };
-    :log info "ROOM ISP v5.0-RC2: archivo personalizado OK";
+    :log info "ROOM ISP v5.0-RC3: archivo personalizado OK";
 
     :local roomIdentity [/system identity get name];
     :local roomVersion [/system resource get version];
@@ -38,7 +38,7 @@
     :if (($roomMajor = 7) && ($roomMinor >= 19) && ($roomMinor < 21)) do={ :set roomTlsProfile "ROS7_19_20_BUILTIN_OR_LOCAL"; };
     :if (($roomMajor = 7) && ($roomMinor >= 21)) do={ :set roomTlsProfile "ROS7_21_PLUS_BUILTIN_OR_LOCAL"; };
     :if ($roomMajor > 7) do={ :set roomTlsProfile "ROS_MODERNO_BUILTIN_OR_LOCAL"; };
-    :log info ("ROOM ISP v5.0-RC2: RouterOS=" . $roomVersion . ", arquitectura=" . $roomArchitecture . ", TLS=" . $roomTlsProfile);
+    :log info ("ROOM ISP v5.0-RC3: RouterOS=" . $roomVersion . ", arquitectura=" . $roomArchitecture . ", TLS=" . $roomTlsProfile);
 
     # Preflight contra la MISMA Edge Function de enrolamiento. GET no consume el codigo.
     # Primero prueba el trust existente/builtin. Solo si falla instala CA ROOM.
@@ -49,11 +49,11 @@
         :set roomProbeData ($roomProbe->"data");
         :if ($roomProbeData = "ROOM_ISP|READY") do={ :set roomHttpsOk true; };
     } on-error={ :set roomHttpsOk false; };
-    :if ($roomHttpsOk) do={ :log info "ROOM ISP v5.0-RC2: HTTPS verificado con trust existente/builtin"; };
+    :if ($roomHttpsOk) do={ :log info "ROOM ISP v5.0-RC3: HTTPS verificado con trust existente/builtin"; };
     # Fallback TLS administrado por ROOM: solo se ejecuta si HTTPS verificado falla.
     # Instala exclusivamente autoridades con prefijo ROOM_ISP_CA_ y no modifica otros certificados.
     :if (!$roomHttpsOk) do={
-        :log warning ("ROOM ISP v5.0-RC2: trust actual no valido para Supabase; instalando CA ROOM para perfil " . $roomTlsProfile);
+        :log warning ("ROOM ISP v5.0-RC3: trust actual no valido para Supabase; instalando CA ROOM para perfil " . $roomTlsProfile);
         :foreach roomOldCa in=[/certificate find where name~"^ROOM_ISP_CA_"] do={ /certificate remove $roomOldCa; };
         :foreach roomOldFile in=[/file find where name~"^ROOM_ISP_CA_"] do={ /file remove $roomOldFile; };
         :local roomPem "";
@@ -177,21 +177,21 @@
             :if ($roomProbeData = "ROOM_ISP|READY") do={ :set roomHttpsOk true; };
         } on-error={ :set roomHttpsOk false; };
         :if (!$roomHttpsOk) do={ :error "ROOM ISP TLS: HTTPS verificado fallo aun despues de instalar CA ROOM"; };
-        :log info "ROOM ISP v5.0-RC2: CA ROOM instaladas y HTTPS verificado";
+        :log info "ROOM ISP v5.0-RC3: CA ROOM instaladas y HTTPS verificado";
     };
-    :log info "ROOM ISP v5.0-RC2: preflight TLS OK; iniciando enrolamiento";
+    :log info "ROOM ISP v5.0-RC3: preflight TLS OK; iniciando enrolamiento";
     :local roomPppoe [/ppp secret print count-only where service=pppoe];
     :local roomDhcp [/ip dhcp-server lease print count-only];
     :local roomHotspot [/ip hotspot user print count-only];
     :local roomQueues [/queue simple print count-only];
-    :local roomBody ("{\"protocol\":4,\"connector_version\":\"5.0-RC1\",\"enrollment_code\":\"" . $roomEnrollCode . "\",\"device\":{\"identity\":\"" . $roomIdentity . "\",\"routeros_version\":\"" . $roomVersion . "\",\"architecture\":\"" . $roomArchitecture . "\",\"model\":\"" . $roomModel . "\",\"software_id\":\"" . $roomSoftwareId . "\"},\"capabilities\":{\"pppoe\":" . $roomPppoe . ",\"dhcp\":" . $roomDhcp . ",\"hotspot\":" . $roomHotspot . ",\"simple_queues\":" . $roomQueues . "}}");
+    :local roomBody ("{\"protocol\":4,\"connector_version\":\"5.0-RC3\",\"enrollment_code\":\"" . $roomEnrollCode . "\",\"device\":{\"identity\":\"" . $roomIdentity . "\",\"routeros_version\":\"" . $roomVersion . "\",\"architecture\":\"" . $roomArchitecture . "\",\"model\":\"" . $roomModel . "\",\"software_id\":\"" . $roomSoftwareId . "\"},\"capabilities\":{\"pppoe\":" . $roomPppoe . ",\"dhcp\":" . $roomDhcp . ",\"hotspot\":" . $roomHotspot . ",\"simple_queues\":" . $roomQueues . "}}");
 
     :local roomEnrollment;
-    :log info "ROOM ISP v5.0-RC2: contactando backend";
+    :log info "ROOM ISP v5.0-RC3: contactando backend";
     :do { :set roomEnrollment [/tool fetch url=$roomEnrollUrl http-method=post http-header-field="Content-Type:application/json" http-data=$roomBody output=user as-value check-certificate=yes-without-crl]; } on-error={ :error "ROOM ISP enrollment failed"; };
     :local roomResponse ($roomEnrollment->"data");
-    :if ([:pick $roomResponse 0 3] != "OK|") do={ :log warning ("ROOM ISP v5.0-RC2: enrolamiento rechazado: " . $roomResponse); :error "ROOM ISP enrollment rejected"; };
-    :log info "ROOM ISP v5.0-RC2: enrolamiento aceptado";
+    :if ([:pick $roomResponse 0 3] != "OK|") do={ :log warning ("ROOM ISP v5.0-RC3: enrolamiento rechazado: " . $roomResponse); :error "ROOM ISP enrollment rejected"; };
+    :log info "ROOM ISP v5.0-RC3: enrolamiento aceptado";
     :local roomRest [:pick $roomResponse 3 [:len $roomResponse]]; :local roomP1 [:find $roomRest "|"]; :local roomRouterId [:pick $roomRest 0 $roomP1];
     :set roomRest [:pick $roomRest ($roomP1 + 1) [:len $roomRest]]; :local roomP2 [:find $roomRest "|"]; :local roomAgentToken [:pick $roomRest 0 $roomP2];
     :local roomPollMinutes [:tonum [:pick $roomRest ($roomP2 + 1) [:len $roomRest]]]; :if (($roomPollMinutes < 5) || ($roomPollMinutes > 60)) do={ :set roomPollMinutes 5; };
@@ -200,7 +200,7 @@
     # Limpieza idempotente: SOLO después de que el backend aceptó el enrolamiento.
     # Las CA ROOM_ISP_CA_* se conservan porque RouterOS 6/7 antiguos las necesitan para los polls HTTPS.
     # Si había una instalación vieja o incompleta, deja exactamente una instalación ROOM ISP.
-    :log info "ROOM ISP v5.0-RC2: limpiando instalacion ROOM ISP anterior";
+    :log info "ROOM ISP v5.0-RC3: limpiando instalacion ROOM ISP anterior";
     :foreach roomItem in=[/system scheduler find where name~"^ROOM_ISP_"] do={ /system scheduler disable $roomItem; };
     :foreach roomItem in=[/system scheduler find where name~"^ROOM_ISP_"] do={ /system scheduler remove $roomItem; };
     :foreach roomItem in=[/system script find where name~"^ROOM_ISP_"] do={ /system script remove $roomItem; };
@@ -210,10 +210,11 @@
     :foreach roomRule in=[/ip firewall filter find where comment="ROOM ISP - suspension"] do={ /ip firewall filter remove $roomRule; };
     /ip firewall filter add chain=forward src-address-list=ROOM_ISP_SUSPENDED action=drop place-before=0 comment="ROOM ISP - suspension";
 
-    :local roomStateSource (":global roomIspRouterId \"" . $roomRouterId . "\";\r\n:global roomIspAgentToken \"" . $roomAgentToken . "\";\r\n:global roomIspAgentUrl \"" . $roomAgentUrl . "\";\r\n:global roomIspProtocol 4;\r\n:global roomIspTlsProfile \"" . $roomTlsProfile . "\";");
-    /system script add name=ROOM_ISP_STATE comment="ROOM ISP v5.0-RC2 - credencial privada" policy=read source=$roomStateSource;
+    :local roomInventoryChunk 900; :if ($roomMajor >= 7) do={ :set roomInventoryChunk 3500; };
+    :local roomStateSource (":global roomIspRouterId \"" . $roomRouterId . "\";\r\n:global roomIspAgentToken \"" . $roomAgentToken . "\";\r\n:global roomIspAgentUrl \"" . $roomAgentUrl . "\";\r\n:global roomIspProtocol 4;\r\n:global roomIspTlsProfile \"" . $roomTlsProfile . "\";\r\n:global roomIspRouterMajor " . $roomMajor . ";\r\n:global roomIspInventoryChunk " . $roomInventoryChunk . ";");
+    /system script add name=ROOM_ISP_STATE comment="ROOM ISP v5.0-RC3 - credencial privada" policy=read source=$roomStateSource;
 
-    /system script add name=ROOM_ISP_AGENT comment="ROOM ISP v5.0-RC2 - control de acceso y cobros" policy=read,write,test source={
+    /system script add name=ROOM_ISP_AGENT comment="ROOM ISP v5.0-RC3 - control de acceso y cobros" policy=read,write,test source={
         :do {
             /system script run ROOM_ISP_STATE;
             :global roomIspRouterId; :global roomIspAgentToken; :global roomIspAgentUrl;
@@ -287,12 +288,17 @@
         } on-error={ :log warning "ROOM ISP: backend no disponible; la red sigue operando"; };
     };
 
-    /system script add name=ROOM_ISP_INVENTORY comment="ROOM ISP v5.0-RC2 - inventario por lotes sin passwords" policy=read,test source={
+    /system script add name=ROOM_ISP_INVENTORY comment="ROOM ISP v5.0-RC3 - inventario multiversion sin passwords" policy=read,test source={
         :do {
             /system script run ROOM_ISP_STATE;
             :global roomIspRouterId;
             :global roomIspAgentToken;
             :global roomIspAgentUrl;
+            :global roomIspRouterMajor;
+            :global roomIspInventoryChunk;
+
+            :local roomChunk $roomIspInventoryChunk;
+            :if (([:typeof $roomChunk] = "nil") || ($roomChunk < 700)) do={ :set roomChunk 900; };
 
             :local roomEsc do={
                 :local s [:tostr $1]; :local out ""; :local n [:len $s];
@@ -301,104 +307,122 @@
                     :local c [:pick $s $i ($i + 1)];
                     :if ($c = "\\") do={ :set out ($out . "\\\\"); } else={
                         :if ($c = "\"") do={ :set out ($out . "\\\""); } else={
-                            :if (($c = "\r") || ($c = "\n")) do={ :set out ($out . " "); } else={ :set out ($out . $c); };
+                            :if (($c = "\r") || ($c = "\n") || ($c = "\t")) do={ :set out ($out . " "); } else={ :set out ($out . $c); };
                         };
                     };
-                }; :return $out;
+                };
+                :return $out;
             };
 
-            :local roomSend do={
-                :global roomIspRouterId; :global roomIspAgentToken; :global roomIspAgentUrl;
-                :local sequence $1; :local final $2; :local items $3;
-                :if (([:len $items] = 0) && ($final != "true")) do={ :return true; };
-                :local body ("{\"protocol\":4,\"mode\":\"inventory\",\"router_id\":\"" . $roomIspRouterId . "\",\"sequence\":" . $sequence . ",\"final\":" . $final . ",\"items\":[" . $items . "]}");
-                :local headers ("Content-Type:application/json,Authorization:Bearer " . $roomIspAgentToken);
-                :local f [/tool fetch url=$roomIspAgentUrl http-method=post http-header-field=$headers http-data=$body output=user as-value check-certificate=yes-without-crl];
-                :if ([:pick ($f->"data") 0 2] != "OK") do={ :error "inventory batch rejected"; };
-                :return true;
-            };
-
-            :local roomItems ""; :local roomSeq 1;
             :local roomAppend do={
                 :local current $1; :local item $2;
                 :if ([:len $current] = 0) do={ :return $item; };
                 :return ($current . "," . $item);
             };
 
-            # Perfiles PPP: permiten crear planes ROOM vinculados al nombre real del MikroTik.
+            :local roomSend do={
+                :global roomIspRouterId; :global roomIspAgentToken; :global roomIspAgentUrl;
+                :local sequence $1; :local final $2; :local items $3; :local stage $4;
+                :if (([:len $items] = 0) && ($final != "true")) do={ :return true; };
+                :local body ("{\"protocol\":4,\"mode\":\"inventory\",\"router_id\":\"" . $roomIspRouterId . "\",\"sequence\":" . $sequence . ",\"final\":" . $final . ",\"items\":[" . $items . "]}");
+                :local headers ("Content-Type:application/json,Authorization:Bearer " . $roomIspAgentToken);
+                :local f;
+                :do { :set f [/tool fetch url=$roomIspAgentUrl http-method=post http-header-field=$headers http-data=$body output=user as-value check-certificate=yes-without-crl]; } on-error={
+                    :log warning ("ROOM ISP: inventario backend no disponible; fase=" . $stage . " lote=" . $sequence);
+                    :error "ROOM_INVENTORY_FETCH_FAILED";
+                };
+                :local data ($f->"data");
+                :if ([:pick $data 0 2] != "OK") do={
+                    :log warning ("ROOM ISP: inventario rechazado; fase=" . $stage . " lote=" . $sequence . " resp=" . [:pick $data 0 60]);
+                    :error "ROOM_INVENTORY_REJECTED";
+                };
+                :return true;
+            };
+
+            :local roomSeq 1; :local roomItems "";
+            :local countProfiles 0; :local countPppoe 0; :local countDhcp 0; :local countStatic 0; :local countHotspot 0; :local countTech 0;
+
+            # Perfiles PPP.
             :foreach x in=[/ppp profile find] do={
                 :local n [/ppp profile get $x name];
                 :if ([:pick $n 0 7] != "default") do={
                     :local rate ""; :local localA ""; :local remoteA ""; :local one "";
-                    :do {:set rate [/ppp profile get $x rate-limit]} on-error={}; :do {:set localA [/ppp profile get $x local-address]} on-error={};
-                    :do {:set remoteA [/ppp profile get $x remote-address]} on-error={}; :do {:set one [/ppp profile get $x only-one]} on-error={};
+                    :do { :set rate [/ppp profile get $x rate-limit]; } on-error={};
+                    :do { :set localA [/ppp profile get $x local-address]; } on-error={};
+                    :do { :set remoteA [/ppp profile get $x remote-address]; } on-error={};
+                    :do { :set one [/ppp profile get $x only-one]; } on-error={};
                     :local item ("{\"type\":\"PROFILE\",\"key\":\"" . [$roomEsc $n] . "\",\"rate_limit\":\"" . [$roomEsc $rate] . "\",\"local_address\":\"" . [$roomEsc $localA] . "\",\"remote_address\":\"" . [$roomEsc $remoteA] . "\",\"only_one\":\"" . [$roomEsc $one] . "\"}");
-                    :set roomItems [$roomAppend $roomItems $item];
-                    :if ([:len $roomItems] > 2400) do={ [$roomSend $roomSeq "false" $roomItems]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
+                    :set roomItems [$roomAppend $roomItems $item]; :set countProfiles ($countProfiles + 1);
+                    :if ([:len $roomItems] > $roomChunk) do={ [$roomSend $roomSeq "false" $roomItems "PROFILE"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
                 };
             };
+            :if ([:len $roomItems] > 0) do={ [$roomSend $roomSeq "false" $roomItems "PROFILE"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
 
-            # PPPoE: comentario legible; si falta o es tecnico, usar username. Nunca password.
+            # PPPoE: nunca extrae password.
             :foreach x in=[/ppp secret find where service=pppoe] do={
-                :local u [/ppp secret get $x name]; :local c [/ppp secret get $x comment];
-                :local p [/ppp secret get $x profile]; :local d [/ppp secret get $x disabled];
-                :local ip ""; :local mac ""; :do {:set ip [/ppp secret get $x remote-address]} on-error={}; :do {:set mac [/ppp secret get $x caller-id]} on-error={};
+                :local u [/ppp secret get $x name]; :local c [/ppp secret get $x comment]; :local p [/ppp secret get $x profile]; :local d [/ppp secret get $x disabled];
+                :local ip ""; :local mac ""; :do { :set ip [/ppp secret get $x remote-address]; } on-error={}; :do { :set mac [/ppp secret get $x caller-id]; } on-error={};
                 :local display $c; :if (([:len $display] = 0) || ([:pick $display 0 11] = "ROOMISP-LAB")) do={ :set display $u; };
                 :local item ("{\"type\":\"PPPOE\",\"key\":\"" . [$roomEsc $u] . "\",\"name\":\"" . [$roomEsc $display] . "\",\"comment\":\"" . [$roomEsc $c] . "\",\"profile\":\"" . [$roomEsc $p] . "\",\"ip\":\"" . [$roomEsc $ip] . "\",\"caller_id\":\"" . [$roomEsc $mac] . "\",\"disabled\":\"" . $d . "\"}");
-                :set roomItems [$roomAppend $roomItems $item];
-                :if ([:len $roomItems] > 2400) do={ [$roomSend $roomSeq "false" $roomItems]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
+                :set roomItems [$roomAppend $roomItems $item]; :set countPppoe ($countPppoe + 1);
+                :if ([:len $roomItems] > $roomChunk) do={ [$roomSend $roomSeq "false" $roomItems "PPPOE"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
             };
+            :if ([:len $roomItems] > 0) do={ [$roomSend $roomSeq "false" $roomItems "PPPOE"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
 
-            # DHCP: identidad estable por MAC; nombre = comentario, hostname o sufijo MAC.
+            # DHCP leases.
             :foreach x in=[/ip dhcp-server lease find] do={
-                :local mac [/ip dhcp-server lease get $x mac-address]; :local c [/ip dhcp-server lease get $x comment];
-                :local ip [/ip dhcp-server lease get $x address]; :local host ""; :local server ""; :local d [/ip dhcp-server lease get $x disabled];
-                :do {:set host [/ip dhcp-server lease get $x host-name]} on-error={}; :do {:set server [/ip dhcp-server lease get $x server]} on-error={};
+                :local mac [/ip dhcp-server lease get $x mac-address]; :local c [/ip dhcp-server lease get $x comment]; :local ip [/ip dhcp-server lease get $x address]; :local d [/ip dhcp-server lease get $x disabled];
+                :local host ""; :local server ""; :do { :set host [/ip dhcp-server lease get $x host-name]; } on-error={}; :do { :set server [/ip dhcp-server lease get $x server]; } on-error={};
                 :local display $c; :if ([:len $display] = 0) do={ :set display $host; }; :if ([:len $display] = 0) do={ :set display ("DHCP-" . [:pick $mac 9 17]); };
                 :local item ("{\"type\":\"DHCP\",\"key\":\"" . [$roomEsc $mac] . "\",\"name\":\"" . [$roomEsc $display] . "\",\"comment\":\"" . [$roomEsc $c] . "\",\"hostname\":\"" . [$roomEsc $host] . "\",\"ip\":\"" . [$roomEsc $ip] . "\",\"server\":\"" . [$roomEsc $server] . "\",\"disabled\":\"" . $d . "\"}");
-                :set roomItems [$roomAppend $roomItems $item];
-                :if ([:len $roomItems] > 2400) do={ [$roomSend $roomSeq "false" $roomItems]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
+                :set roomItems [$roomAppend $roomItems $item]; :set countDhcp ($countDhcp + 1);
+                :if ([:len $roomItems] > $roomChunk) do={ [$roomSend $roomSeq "false" $roomItems "DHCP"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
             };
+            :if ([:len $roomItems] > 0) do={ [$roomSend $roomSeq "false" $roomItems "DHCP"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
 
-            # IP fija: Simple Queue es evidencia administrable; target es la clave.
+            # IP fija / Simple Queue.
             :foreach x in=[/queue simple find] do={
-                :local n [/queue simple get $x name]; :local c [/queue simple get $x comment]; :local target [/queue simple get $x target];
-                :local max [/queue simple get $x max-limit]; :local d [/queue simple get $x disabled];
+                :local n [/queue simple get $x name]; :local c [/queue simple get $x comment]; :local target [/queue simple get $x target]; :local max [/queue simple get $x max-limit]; :local d [/queue simple get $x disabled];
                 :local display $c; :if ([:len $display] = 0) do={ :set display $n; };
                 :local item ("{\"type\":\"STATIC\",\"key\":\"" . [$roomEsc $target] . "\",\"name\":\"" . [$roomEsc $display] . "\",\"queue\":\"" . [$roomEsc $n] . "\",\"target\":\"" . [$roomEsc $target] . "\",\"max_limit\":\"" . [$roomEsc $max] . "\",\"disabled\":\"" . $d . "\"}");
-                :set roomItems [$roomAppend $roomItems $item];
-                :if ([:len $roomItems] > 2400) do={ [$roomSend $roomSeq "false" $roomItems]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
+                :set roomItems [$roomAppend $roomItems $item]; :set countStatic ($countStatic + 1);
+                :if ([:len $roomItems] > $roomChunk) do={ [$roomSend $roomSeq "false" $roomItems "STATIC"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
             };
+            :if ([:len $roomItems] > 0) do={ [$roomSend $roomSeq "false" $roomItems "STATIC"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
 
-            # Hotspot: usuario, comentario y perfil. Las claves nunca salen del router.
+            # Hotspot: nunca extrae password.
             :foreach x in=[/ip hotspot user find] do={
-                :local u [/ip hotspot user get $x name]; :local c [/ip hotspot user get $x comment];
-                :local p [/ip hotspot user get $x profile]; :local limit ""; :local d [/ip hotspot user get $x disabled];
-                :do {:set limit [/ip hotspot user get $x limit-uptime]} on-error={};
+                :local u [/ip hotspot user get $x name]; :local c [/ip hotspot user get $x comment]; :local p [/ip hotspot user get $x profile]; :local d [/ip hotspot user get $x disabled]; :local limit "";
+                :do { :set limit [/ip hotspot user get $x limit-uptime]; } on-error={};
                 :local display $c; :if ([:len $display] = 0) do={ :set display $u; };
                 :local item ("{\"type\":\"HOTSPOT\",\"key\":\"" . [$roomEsc $u] . "\",\"name\":\"" . [$roomEsc $display] . "\",\"profile\":\"" . [$roomEsc $p] . "\",\"limit_uptime\":\"" . [$roomEsc $limit] . "\",\"disabled\":\"" . $d . "\"}");
-                :set roomItems [$roomAppend $roomItems $item];
-                :if ([:len $roomItems] > 2400) do={ [$roomSend $roomSeq "false" $roomItems]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
+                :set roomItems [$roomAppend $roomItems $item]; :set countHotspot ($countHotspot + 1);
+                :if ([:len $roomItems] > $roomChunk) do={ [$roomSend $roomSeq "false" $roomItems "HOTSPOT"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
             };
+            :if ([:len $roomItems] > 0) do={ [$roomSend $roomSeq "false" $roomItems "HOTSPOT"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
 
-            # Inventario tecnico: topologia y capacidades sin secretos.
+            # Inventario tecnico para reconocimiento del equipo/red. Solo lectura, sin secretos.
             :foreach x in=[/interface find] do={
-                :local n [/interface get $x name]; :local t [/interface get $x type]; :local r [/interface get $x running]; :local d [/interface get $x disabled]; :local mac ""; :do {:set mac [/interface get $x mac-address]} on-error={};
-                :local item ("{\"type\":\"INTERFACE\",\"key\":\"" . [$roomEsc $n] . "\",\"interface_type\":\"" . [$roomEsc $t] . "\",\"running\":\"" . $r . "\",\"disabled\":\"" . $d . "\",\"mac\":\"" . [$roomEsc $mac] . "\"}");
-                :set roomItems [$roomAppend $roomItems $item]; :if ([:len $roomItems] > 2400) do={ [$roomSend $roomSeq "false" $roomItems]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
+                :local n [/interface get $x name]; :local t [/interface get $x type]; :local rr [/interface get $x running]; :local d [/interface get $x disabled]; :local mac ""; :do { :set mac [/interface get $x mac-address]; } on-error={};
+                :local item ("{\"type\":\"INTERFACE\",\"key\":\"" . [$roomEsc $n] . "\",\"interface_type\":\"" . [$roomEsc $t] . "\",\"running\":\"" . $rr . "\",\"disabled\":\"" . $d . "\",\"mac\":\"" . [$roomEsc $mac] . "\"}");
+                :set roomItems [$roomAppend $roomItems $item]; :set countTech ($countTech + 1); :if ([:len $roomItems] > $roomChunk) do={ [$roomSend $roomSeq "false" $roomItems "TECH"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
             };
-            :foreach x in=[/ip address find] do={ :local a [/ip address get $x address]; :local i [/ip address get $x interface]; :local item ("{\"type\":\"IP_ADDRESS\",\"key\":\"" . [$roomEsc $a] . "\",\"interface\":\"" . [$roomEsc $i] . "\"}"); :set roomItems [$roomAppend $roomItems $item]; :if ([:len $roomItems] > 2400) do={ [$roomSend $roomSeq "false" $roomItems]; :set roomSeq ($roomSeq + 1); :set roomItems ""; }; };
-            :foreach x in=[/interface bridge find] do={ :local n [/interface bridge get $x name]; :local item ("{\"type\":\"BRIDGE\",\"key\":\"" . [$roomEsc $n] . "\"}"); :set roomItems [$roomAppend $roomItems $item]; };
-            :foreach x in=[/interface vlan find] do={ :local n [/interface vlan get $x name]; :local v [/interface vlan get $x vlan-id]; :local i [/interface vlan get $x interface]; :local item ("{\"type\":\"VLAN\",\"key\":\"" . [$roomEsc $n] . "\",\"vlan_id\":\"" . $v . "\",\"interface\":\"" . [$roomEsc $i] . "\"}"); :set roomItems [$roomAppend $roomItems $item]; };
-            :foreach x in=[/ip pool find] do={ :local n [/ip pool get $x name]; :local ranges [/ip pool get $x ranges]; :local item ("{\"type\":\"IP_POOL\",\"key\":\"" . [$roomEsc $n] . "\",\"ranges\":\"" . [$roomEsc $ranges] . "\"}"); :set roomItems [$roomAppend $roomItems $item]; };
-            :foreach x in=[/ip dhcp-server find] do={ :local n [/ip dhcp-server get $x name]; :local i [/ip dhcp-server get $x interface]; :local pool [/ip dhcp-server get $x address-pool]; :local item ("{\"type\":\"DHCP_SERVER\",\"key\":\"" . [$roomEsc $n] . "\",\"interface\":\"" . [$roomEsc $i] . "\",\"pool\":\"" . [$roomEsc $pool] . "\"}"); :set roomItems [$roomAppend $roomItems $item]; };
-            :foreach x in=[/interface pppoe-server server find] do={ :local n [/interface pppoe-server server get $x service-name]; :local i [/interface pppoe-server server get $x interface]; :local item ("{\"type\":\"PPPOE_SERVER\",\"key\":\"" . [$roomEsc $n] . "\",\"interface\":\"" . [$roomEsc $i] . "\"}"); :set roomItems [$roomAppend $roomItems $item]; };
-            :local sysKey [/system identity get name]; :local sysItem ("{\"type\":\"SYSTEM\",\"key\":\"" . [$roomEsc $sysKey] . "\",\"version\":\"" . [$roomEsc [/system resource get version]] . "\",\"model\":\"" . [$roomEsc [/system resource get board-name]] . "\",\"architecture\":\"" . [$roomEsc [/system resource get architecture-name]] . "\",\"software_id\":\"" . [$roomEsc [/system license get software-id]] . "\"}"); :set roomItems [$roomAppend $roomItems $sysItem];
-            :if ([:len $roomItems] > 2400) do={ [$roomSend $roomSeq "false" $roomItems]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
-            [$roomSend $roomSeq "true" $roomItems];
-            :log info ("ROOM ISP: inventario terminado en " . $roomSeq . " lote(s), sin passwords");
+            :foreach x in=[/ip address find] do={ :local a [/ip address get $x address]; :local i [/ip address get $x interface]; :local item ("{\"type\":\"IP_ADDRESS\",\"key\":\"" . [$roomEsc $a] . "\",\"interface\":\"" . [$roomEsc $i] . "\"}"); :set roomItems [$roomAppend $roomItems $item]; :set countTech ($countTech + 1); :if ([:len $roomItems] > $roomChunk) do={ [$roomSend $roomSeq "false" $roomItems "TECH"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; }; };
+            :foreach x in=[/interface bridge find] do={ :local n [/interface bridge get $x name]; :local item ("{\"type\":\"BRIDGE\",\"key\":\"" . [$roomEsc $n] . "\"}"); :set roomItems [$roomAppend $roomItems $item]; :set countTech ($countTech + 1); :if ([:len $roomItems] > $roomChunk) do={ [$roomSend $roomSeq "false" $roomItems "TECH"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; }; };
+            :foreach x in=[/interface vlan find] do={ :local n [/interface vlan get $x name]; :local v [/interface vlan get $x vlan-id]; :local i [/interface vlan get $x interface]; :local item ("{\"type\":\"VLAN\",\"key\":\"" . [$roomEsc $n] . "\",\"vlan_id\":\"" . $v . "\",\"interface\":\"" . [$roomEsc $i] . "\"}"); :set roomItems [$roomAppend $roomItems $item]; :set countTech ($countTech + 1); :if ([:len $roomItems] > $roomChunk) do={ [$roomSend $roomSeq "false" $roomItems "TECH"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; }; };
+            :foreach x in=[/ip pool find] do={ :local n [/ip pool get $x name]; :local ranges [/ip pool get $x ranges]; :local item ("{\"type\":\"IP_POOL\",\"key\":\"" . [$roomEsc $n] . "\",\"ranges\":\"" . [$roomEsc $ranges] . "\"}"); :set roomItems [$roomAppend $roomItems $item]; :set countTech ($countTech + 1); :if ([:len $roomItems] > $roomChunk) do={ [$roomSend $roomSeq "false" $roomItems "TECH"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; }; };
+            :foreach x in=[/ip dhcp-server find] do={ :local n [/ip dhcp-server get $x name]; :local i [/ip dhcp-server get $x interface]; :local pool [/ip dhcp-server get $x address-pool]; :local item ("{\"type\":\"DHCP_SERVER\",\"key\":\"" . [$roomEsc $n] . "\",\"interface\":\"" . [$roomEsc $i] . "\",\"pool\":\"" . [$roomEsc $pool] . "\"}"); :set roomItems [$roomAppend $roomItems $item]; :set countTech ($countTech + 1); :if ([:len $roomItems] > $roomChunk) do={ [$roomSend $roomSeq "false" $roomItems "TECH"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; }; };
+            :foreach x in=[/interface pppoe-server server find] do={ :local n [/interface pppoe-server server get $x service-name]; :local i [/interface pppoe-server server get $x interface]; :local item ("{\"type\":\"PPPOE_SERVER\",\"key\":\"" . [$roomEsc $n] . "\",\"interface\":\"" . [$roomEsc $i] . "\"}"); :set roomItems [$roomAppend $roomItems $item]; :set countTech ($countTech + 1); :if ([:len $roomItems] > $roomChunk) do={ [$roomSend $roomSeq "false" $roomItems "TECH"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; }; };
+            :local sysKey [/system identity get name]; :local swid ""; :do { :set swid [/system license get software-id]; } on-error={};
+            :local sysItem ("{\"type\":\"SYSTEM\",\"key\":\"" . [$roomEsc $sysKey] . "\",\"version\":\"" . [$roomEsc [/system resource get version]] . "\",\"model\":\"" . [$roomEsc [/system resource get board-name]] . "\",\"architecture\":\"" . [$roomEsc [/system resource get architecture-name]] . "\",\"software_id\":\"" . [$roomEsc $swid] . "\"}");
+            :set roomItems [$roomAppend $roomItems $sysItem]; :set countTech ($countTech + 1);
+            :if ([:len $roomItems] > 0) do={ [$roomSend $roomSeq "false" $roomItems "TECH"]; :set roomSeq ($roomSeq + 1); :set roomItems ""; };
+
+            # Finaliza el ciclo para que backend marque last_inventory_at y ONLINE.
+            [$roomSend $roomSeq "true" "" "FINAL"];
+            :log info ("ROOM ISP: inventario OK; lotes=" . $roomSeq . ", PPPoE=" . $countPppoe . ", DHCP=" . $countDhcp . ", IP=" . $countStatic . ", Hotspot=" . $countHotspot . ", perfiles=" . $countProfiles . ", red=" . $countTech);
         } on-error={
-            :log warning "ROOM ISP: inventario incompleto; se reintentara en la proxima conciliacion";
+            :log warning "ROOM ISP: inventario incompleto; se reintentara automaticamente";
         };
     };
 
@@ -406,9 +430,11 @@
     :local roomPollInterval ($roomPollMinutes . "m");
     :foreach roomSched in=[/system scheduler find where name="ROOM_ISP_AGENT_SCHED"] do={ /system scheduler remove $roomSched; };
     :foreach roomSched in=[/system scheduler find where name="ROOM_ISP_INVENTORY_SCHED"] do={ /system scheduler remove $roomSched; };
-    /system scheduler add name=ROOM_ISP_AGENT_SCHED interval=$roomPollInterval start-time=startup on-event="/system script run ROOM_ISP_AGENT" policy=read,write,test comment="ROOM ISP v5.0-RC2 - poll";
-    /system scheduler add name=ROOM_ISP_INVENTORY_SCHED interval=1d start-time=00:17:00 on-event="/system script run ROOM_ISP_INVENTORY" policy=read,test comment="ROOM ISP v5.0-RC2 - inventario diario";
+    /system scheduler add name=ROOM_ISP_AGENT_SCHED interval=$roomPollInterval start-time=startup on-event="/system script run ROOM_ISP_AGENT" policy=read,write,test comment="ROOM ISP v5.0-RC3 - poll";
+    /system scheduler add name=ROOM_ISP_INVENTORY_SCHED interval=1d start-time=00:17:00 on-event="/system script run ROOM_ISP_INVENTORY" policy=read,test comment="ROOM ISP v5.0-RC3 - inventario diario";
     /system script run ROOM_ISP_AGENT;
     /system script run ROOM_ISP_INVENTORY;
-    :log info ("ROOM ISP v5.0-RC2: INSTALACION COMPLETA; poll=" . $roomPollInterval . ", inventario=1d");
-}
+    :log info ("ROOM ISP v5.0-RC3: INSTALACION COMPLETA; poll=" . $roomPollInterval . ", inventario=1d");
+    :put "ROOM ISP INSTALADO CORRECTAMENTE";
+    :put ("Equipo: " . $roomModel . " | RouterOS: " . $roomVersion . " | Arquitectura: " . $roomArchitecture);
+    :put ("ROOM ISP: sincronizacion automatica activa cada " . $roomPollInterval);
