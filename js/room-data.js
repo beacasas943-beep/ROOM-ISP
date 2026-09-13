@@ -1,4 +1,4 @@
-// ROOM ISP v5.0-RC4.3 · Data layer · cliente celular/DNI + PIN
+// ROOM ISP v5.0-RC4.4 · Data layer · Client Experience
 (() => {
   "use strict";
   const cfg = window.ROOM_ISP_CONFIG || {};
@@ -184,4 +184,3 @@
     configured, portal, config: cfg
   });
 })();
-

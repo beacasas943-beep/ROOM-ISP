@@ -1,0 +1,9 @@
+{
+  "name": "ROOM ISP Cliente",
+  "short_name": "ROOM ISP",
+  "start_url": "/cliente.html",
+  "display": "standalone",
+  "background_color": "#07101d",
+  "theme_color": "#07101d",
+  "icons": [{"src":"/assets/room-mark.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
