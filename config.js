@@ -6,6 +6,8 @@ window.ROOM_ISP_CONFIG = {
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_Qxwgt1sIxYfsVXN4WOnhHw_OVmfNzuv",
   ROOM_API_FUNCTION: "room-api",
   MIKROTIK_INSTALLER_FUNCTION: "mikrotik-installer",
+  SMARTOLT_FUNCTION: "smartolt-sync",
+  IDENTITY_LOOKUP_FUNCTION: "identity-lookup",
 
   ENABLE_TEST_AUTH: false,
   TEST_ADMIN_USER: "",

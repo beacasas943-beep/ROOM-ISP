@@ -1,3 +1,4 @@
+// ROOM ISP v5.0-RC4 · Data layer
 (() => {
   "use strict";
   const cfg = window.ROOM_ISP_CONFIG || {};
@@ -147,11 +148,14 @@
     return invoke(cfg.SMARTOLT_FUNCTION || "smartolt-sync", { organization_id: organizationId, mode });
   }
 
+  async function identityLookup(organizationId, documentNumber) {
+    return invoke(cfg.IDENTITY_LOOKUP_FUNCTION || "identity-lookup", { organization_id: organizationId, document_number: String(documentNumber || "").trim() });
+  }
+
   window.RoomData = Object.freeze({
     init, api, invoke, whoami, signInStaff, requestCustomerOtp, verifyCustomerOtp, signOut, changePassword,
-    table, upload, signedUrl, mikrotikInstaller, mikrotikInstallerStatus, smartoltSync, normalizePhone,
+    table, upload, signedUrl, mikrotikInstaller, mikrotikInstallerStatus, smartoltSync, identityLookup, normalizePhone,
     get client(){ return client; }, get session(){ return session; }, get identity(){ return identity; },
     configured, portal, config: cfg
   });
 })();
-
