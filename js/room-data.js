@@ -1,4 +1,4 @@
-// ROOM ISP v5.0-RC4.4 · Data layer · Client Experience
+// ROOM ISP v5.0-RC4.4.1 · Data layer · Client Experience + payment upload proxy
 (() => {
   "use strict";
   const cfg = window.ROOM_ISP_CONFIG || {};
@@ -55,6 +55,25 @@
 
   async function api(action, payload = {}) {
     return invoke(cfg.ROOM_API_FUNCTION || "room-api", { action, ...payload, request_id: crypto.randomUUID() });
+  }
+
+  async function invokeForm(functionName, action, formData, { auth = true } = {}) {
+    if (!configured || !client) throw new Error("SUPABASE_NOT_CONFIGURED");
+    if (auth && !session?.access_token) throw new Error("AUTH_REQUIRED");
+    if (!(formData instanceof FormData)) throw new Error("FORM_DATA_REQUIRED");
+    const headers = { apikey: cfg.SUPABASE_PUBLISHABLE_KEY };
+    if (auth) headers.Authorization = `Bearer ${session.access_token}`;
+    const url = `${cfg.SUPABASE_URL}/functions/v1/${functionName}?action=${encodeURIComponent(action)}`;
+    const response = await fetch(url, { method: "POST", headers, body: formData, cache: "no-store" });
+    const text = await response.text();
+    let data = null;
+    try { data = JSON.parse(text); } catch { data = { ok: false, error: text || `HTTP_${response.status}` }; }
+    if (!response.ok || data?.ok === false) throw new Error(data?.error || `HTTP_${response.status}`);
+    return data;
+  }
+
+  async function reportCustomerPayment(formData) {
+    return invokeForm(cfg.ROOM_API_FUNCTION || "room-api", "customer_report_payment", formData);
   }
 
   async function whoami() {
@@ -179,7 +198,7 @@
 
   window.RoomData = Object.freeze({
     init, api, invoke, whoami, signInStaff, signInCustomer, changeCustomerPin, requestCustomerOtp, verifyCustomerOtp, signOut, changePassword,
-    table, upload, signedUrl, mikrotikInstaller, mikrotikInstallerStatus, smartoltSync, identityLookup, normalizePhone,
+    table, upload, signedUrl, reportCustomerPayment, mikrotikInstaller, mikrotikInstallerStatus, smartoltSync, identityLookup, normalizePhone,
     get client(){ return client; }, get session(){ return session; }, get identity(){ return identity; },
     configured, portal, config: cfg
   });
