@@ -1,4 +1,4 @@
-// ROOM ISP v5.0-RC4.2 · Data layer
+// ROOM ISP v5.0-RC4.3 · Data layer · cliente celular/DNI + PIN
 (() => {
   "use strict";
   const cfg = window.ROOM_ISP_CONFIG || {};
@@ -82,6 +82,31 @@
     return { session, identity };
   }
 
+  async function signInCustomer(identifier, pin) {
+    if (!configured || !client) throw new Error("SUPABASE_NOT_CONFIGURED");
+    const identityValue = String(identifier || "").trim();
+    const pinValue = String(pin || "").trim();
+    if (!identityValue || !/^\d{8}$/.test(pinValue)) throw new Error("CUSTOMER_LOGIN_INVALID");
+    const orgSlug = new URLSearchParams(location.search).get("org") || "";
+    const data = await invoke(cfg.CUSTOMER_AUTH_FUNCTION || "customer-auth", { identifier: identityValue, pin: pinValue, organization_slug: orgSlug }, { auth: false });
+    const { data: setData, error } = await client.auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token });
+    if (error || !setData.session) throw error || new Error("INVALID_LOGIN_CREDENTIALS");
+    session = setData.session;
+    try { identity = await whoami(); }
+    catch (error) { await client.auth.signOut({ scope: "local" }); session = null; throw error; }
+    return { session, identity };
+  }
+
+  async function changeCustomerPin(pin) {
+    if (!client || !session) throw new Error("AUTH_REQUIRED");
+    const value = String(pin || "").trim();
+    if (!/^\d{8}$/.test(value)) throw new Error("CUSTOMER_PIN_INVALID");
+    const { error } = await client.auth.updateUser({ password: value, data: { must_change_password: false } });
+    if (error) throw error;
+    identity = await whoami();
+    return true;
+  }
+
   async function requestCustomerOtp(phone, channel = "sms") {
     if (!configured || !client) throw new Error("SUPABASE_NOT_CONFIGURED");
     const normalized = normalizePhone(phone);
@@ -153,9 +178,10 @@
   }
 
   window.RoomData = Object.freeze({
-    init, api, invoke, whoami, signInStaff, requestCustomerOtp, verifyCustomerOtp, signOut, changePassword,
+    init, api, invoke, whoami, signInStaff, signInCustomer, changeCustomerPin, requestCustomerOtp, verifyCustomerOtp, signOut, changePassword,
     table, upload, signedUrl, mikrotikInstaller, mikrotikInstallerStatus, smartoltSync, identityLookup, normalizePhone,
     get client(){ return client; }, get session(){ return session; }, get identity(){ return identity; },
     configured, portal, config: cfg
   });
 })();
+
